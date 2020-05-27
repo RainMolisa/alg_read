@@ -34,5 +34,8 @@
 	终结态：最终得分=max( v[T](1)*a[1][F]),...,v[T](s)*a[s][F],...,v[T](N)*a[N][F] )  其中，a[s][F]代表状态s转终末状态F的概率
 	Viterbi和前向算法是非常相近的，不同点在于前向做Sum Viterbi做Max，还有Viterbi要记录状态序列。
 4）训练（前向后向算法）
-	
+	输入：观测序列集合、状态集合
+	输出：lamda=(A,B)
+	（to be continued）
 5）例子
+	（to be continued）
