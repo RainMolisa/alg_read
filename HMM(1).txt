@@ -2,7 +2,7 @@
 1）隐式马尔科夫的定义
 	状态：Q=q[1],q[2],...,q[N] （ASR中状态就是音素，Part-of-speech tagging中状态就是语法标志）
 	状态转移矩阵：A=a[1][1],a[1][2],...,a[N][1],...,a[N][N] （实践中初始值是手动设置的）
-	观测向量：O=o[1],o[2],...,o[T] (这里暂时离散化为T种，ASR中观测向量就是MFCC，Part-of-speech tagging中状态就是单词)
+	观测向量：O=o[1],o[2],...,o[T] ()
 	发生概率：B=b[i](o[t]) （这里B用的最多的是混合高斯，用SVM和多层感知的也有很多）
 		状态q[i]发生观测o[t]的概率是b[i](o[t])
 	开始状态和终结状态的两种表示方式：
@@ -60,8 +60,24 @@
 	公式8： 从状态i出发转状态的次数=sum(SumT[i][1],...,SumT[i][j],...,SumT[i][N])
 	把公式7和公式8带入公式1：
 	公式9： _a[i][j]=SumT[i][j]/(SumT[i][1],...,SumT[i][j],...,SumT[i][N])
-	下面计算B:
 	
+	下面计算B:
+	设vk是观测向量里的一种值，也就是vk属于O
+	那么根据B的定义有：
+	公式1： _b[j](vk)=( 观测值是vk并且状态是j的次数 )/( 状态j的次数 )
+	为了计算状态j出现的次数，我们需要计算每一个时刻状态j出现的概率，也就是下面的公式：
+	公式2：gamma[t](j)=P(q[t]=j | O,lamda)
+	也就是lamda产生观测序列O时，时刻t是状态j的概率是gamma[t](j)
+	观察到O依旧在概率的条件里，所以要把O放出来。下面用一次条件概率就会有：
+	公式3： gamma[t](j)=P(q[t]=j,O|lamda)/P(O|lamda)
+	其中P(O|lamda)就是一次前向概率。
+	P(q[t]=j,O|lamda)表示由lamda产生的序列O中t时刻发生状态j的概率。t时刻发生状态j的条件是需要同时满足t时刻之前的序列会发生j和t时刻之后的序列需要j发生，所以：
+	公式4： P(q[t]=j,O|lamda)=alpha[t](j)*beta[t](j)
+	然后把公式4带入到公式3
+	公式5： gamma[t](j)=alpha[t](j)*beta[t](j)/P(O|lamda)
+	于是状态j的次数就可以表示成：
+	公式6： 状态j的次数=sum(gamma[1](j),...,gamma[t](j),...,gamma[T](j))
+	P(o[t]=vk | j)*gamma[t](j)
 5）例子
 	（to be continued）
 	
