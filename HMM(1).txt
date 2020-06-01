@@ -1,9 +1,11 @@
 隐式马尔科夫（HMM）的简单介绍
 1）隐式马尔科夫的定义
 	状态：Q=q[1],q[2],...,q[N] （ASR中状态就是音素，Part-of-speech tagging中状态就是语法标志）
-	状态转移矩阵：A=a[1][1],a[1][2],...,a[N][1],...,a[N][N] （实践中初始值是手动设置的）
-	观测向量：O=o[1],o[2],...,o[T] ()
-	发生概率：B=b[i](o[t]) （这里B用的最多的是混合高斯，用SVM和多层感知的也有很多）
+	状态转移矩阵：A=a[1][1],a[1][2],...,a[N][1],...,a[N][N] 
+	观测向量：O=o[1],o[2],...,o[T] 
+		观测向量里的每一个观测向量都属于单词表V={v1,v2,...,vk,...,vn}
+		单词表相当于离散化向量空间，关于连续的观测向量（类似MFCC）后面会另作讨论。
+	发生概率：B=b[i](o[t])
 		状态q[i]发生观测o[t]的概率是b[i](o[t])
 	开始状态和终结状态的两种表示方式：
 		1、开始状态q[0]，和终结状态q[F]
@@ -36,48 +38,71 @@
 4）训练（前向后向算法）
 	输入：观测序列集合、状态集合
 	输出：lamda=(A,B)
-	下面先计算A：
-	根据A的定义有：
-	公式1： _a[i][j]=(从状态i转状态j的次数)/(从状态i出发转状态的次数)
-	为了从观测序列中统计从状态i转状态j的次数，定义sigma
-			sigma[t](i,j)是当观测序列O和lamda作为条件时，t时刻是状态i并且t+1时刻是状态j的概率，也就是下面式子：
-	公式2： sigma[t](i,j)=P(q[t]=i,q[t+1]=j | O,lamda)
+	4.1 下面先计算A：
+		根据A的定义有：
+			公式01：_a[i][j]=(从状态i转状态j的次数)/(从状态i出发转状态的次数)
+		为了从观测序列中统计从状态i转状态j的次数，定义sigma
+		sigma[t](i,j)是当观测序列O和lamda作为条件时，t时刻是状态i并且t+1时刻是状态j的概率，也就是下面式子：
+			公式02：sigma[t](i,j)=P(q[t]=i,q[t+1]=j | O,lamda)
 		观察到O依旧在概率的条件里，所以要把O放出来。下面用一次条件概率就会有：
-	公式3： P(q[t]=i,q[t+1]=j | O,lamda)=P(q[t]=i,q[t+1]=j, O| lamda)/P(O|lamda)
-			P(q[t]=i,q[t+1]=j, O| lamda)表示lamda条件下观测序列O中，t时刻是状态i并且t+1时刻是状态j的概率
-			P(O|lamda)表示lamda发生观测序列O的概率，这里lamda发生观测序列O的概率就是用前向算法算出的相似度得分，也就是：alpha[T](F)
-	为了计算lamda条件下i->j在观测序列O中发生的概率，我们需要引入后向概率，计算后向概率的方法叫后向算法（因为前向算法只覆盖到1...t-1部分，所以需要t+1...T才能覆盖住整个O）
-	后向概率：
-	公式4： beta[t](i)=sum(a[i][1]*b[1](o[t+1])*beta[t+1](1),...,a[i][j]*b[j](o[t+1])*beta[t+1](j),...,a[i][N]*b[N](o[t+1])*beta[t+1](N))
-	然后我们就有：
-	公式5： P(q[t]=i,q[t+1]=j, O| lamda)=alpha[t](i)*a[i][j]*b[j](o[t+1])*beta[t+1](j)
-	带入公式3就可以有：
-	公式6： sigma[t](i,j)=( alpha[t](i)*a[i][j]*b[j](o[t+1])*beta[t+1](j) )/(alpha[T](F))
-	下面统计从状态i转状态j的次数：
-	设从状态i转状态j的次数为SumT[i][j]
-	公式7： SumT[i][j]=sum(sigma[1](i,j),   ,sigma[t](i,j),   ,sigma[T-1](i,j))
-	下面统计从状态i出发转状态的次数:
-	公式8： 从状态i出发转状态的次数=sum(SumT[i][1],...,SumT[i][j],...,SumT[i][N])
-	把公式7和公式8带入公式1：
-	公式9： _a[i][j]=SumT[i][j]/(SumT[i][1],...,SumT[i][j],...,SumT[i][N])
-	
-	下面计算B:
-	设vk是观测向量里的一种值，也就是vk属于O
-	那么根据B的定义有：
-	公式1： _b[j](vk)=( 观测值是vk并且状态是j的次数 )/( 状态j的次数 )
-	为了计算状态j出现的次数，我们需要计算每一个时刻状态j出现的概率，也就是下面的公式：
-	公式2：gamma[t](j)=P(q[t]=j | O,lamda)
-	也就是lamda产生观测序列O时，时刻t是状态j的概率是gamma[t](j)
-	观察到O依旧在概率的条件里，所以要把O放出来。下面用一次条件概率就会有：
-	公式3： gamma[t](j)=P(q[t]=j,O|lamda)/P(O|lamda)
-	其中P(O|lamda)就是一次前向概率。
-	P(q[t]=j,O|lamda)表示由lamda产生的序列O中t时刻发生状态j的概率。t时刻发生状态j的条件是需要同时满足t时刻之前的序列会发生j和t时刻之后的序列需要j发生，所以：
-	公式4： P(q[t]=j,O|lamda)=alpha[t](j)*beta[t](j)
-	然后把公式4带入到公式3
-	公式5： gamma[t](j)=alpha[t](j)*beta[t](j)/P(O|lamda)
-	于是状态j的次数就可以表示成：
-	公式6： 状态j的次数=sum(gamma[1](j),...,gamma[t](j),...,gamma[T](j))
-	P(o[t]=vk | j)*gamma[t](j)
+			公式03：P(q[t]=i,q[t+1]=j | O,lamda)=P(q[t]=i,q[t+1]=j, O| lamda)/P(O|lamda)
+		P(q[t]=i,q[t+1]=j, O| lamda)表示lamda条件下观测序列O中，t时刻是状态i并且t+1时刻是状态j的概率
+		P(O|lamda)表示lamda发生观测序列O的概率，这里lamda发生观测序列O的概率就是用前向算法算出的相似度得分，也就是：alpha[T](F)
+		为了计算lamda条件下i->j在观测序列O中发生的概率，我们需要引入后向概率，计算后向概率的方法叫后向算法（因为前向算法只覆盖到1...t-1部分，所以需要t+1...T才能覆盖住整个O）
+		后向概率：
+			公式04：beta[t](i)=sum(a[i][1]*b[1](o[t+1])*beta[t+1](1),...,a[i][j]*b[j](o[t+1])*beta[t+1](j),...,a[i][N]*b[N](o[t+1])*beta[t+1](N))
+		然后我们就有：
+			公式05：P(q[t]=i,q[t+1]=j, O| lamda)=alpha[t](i)*a[i][j]*b[j](o[t+1])*beta[t+1](j)
+		带入公式3就可以有：
+			公式06：sigma[t](i,j)=( alpha[t](i)*a[i][j]*b[j](o[t+1])*beta[t+1](j) )/(alpha[T](F))
+		下面统计从状态i转状态j的次数：
+		设从状态i转状态j的次数为SumT[i][j]
+			公式07：SumT[i][j]=sum(sigma[1](i,j),   ,sigma[t](i,j),   ,sigma[T-1](i,j))
+		下面统计从状态i出发转状态的次数:
+			公式08：从状态i出发转状态的次数=sum(SumT[i][1],...,SumT[i][j],...,SumT[i][N])
+		把公式7和公式8带入公式1：
+			公式09：_a[i][j]=SumT[i][j]/(SumT[i][1],...,SumT[i][j],...,SumT[i][N])
+	4.2 下面计算B（离散单词表）:
+		设vk属于V
+		那么根据B的定义有：
+			公式10：_b[j](vk)=( 观测值是vk并且状态是j的次数 )/( 状态j的次数 )
+		为了计算状态j出现的次数，我们需要计算每一个时刻状态j出现的概率，也就是下面的公式：
+			公式11：gamma[t](j)=P(q[t]=j | O,lamda)
+		也就是lamda产生观测序列O时，时刻t是状态j的概率是gamma[t](j)
+		观察到O依旧在概率的条件里，所以要把O放出来。下面用一次条件概率就会有：
+			公式12：gamma[t](j)=P(q[t]=j,O|lamda)/P(O|lamda)
+		其中P(O|lamda)就是一次前向概率。
+		P(q[t]=j,O|lamda)表示由lamda产生的序列O中t时刻发生状态j的概率。t时刻发生状态j的条件是需要同时满足t时刻之前的序列会发生j和t时刻之后的序列需要j发生，所以：
+			公式13：P(q[t]=j,O|lamda)=alpha[t](j)*beta[t](j)
+		然后把公式13带入到公式12
+			公式14：gamma[t](j)=alpha[t](j)*beta[t](j)/P(O|lamda)
+		于是状态j的次数就可以表示成：
+			公式15：状态j的次数=sum(gamma[1](j),...,gamma[t](j),...,gamma[T](j))
+		观测值是vk并且状态是j的次数就是把观测值是vk的gamma[t](j)全加，下面写成：
+			公式16：观测值是vk并且状态是j的次数=sum[o[t]=vk](gamma[1](j),...,gamma[t](j),...,gamma[T](j))
+		然后把公式16和15带入公式10：
+			公式17：_b[j](vk)=sum[o[t]=vk](gamma[1](j),...,gamma[t](j),...,gamma[T](j)) / sum(gamma[1](j),...,gamma[t](j),...,gamma[T](j))
+	4.3 前向后向算法流程：
+		输入：观测序列O 单词表V 状态集合Q
+		输出：lamda=(A,B)
+		初始化A和B
+		迭代直到收敛
+			E-step：
+				计算公式6
+				计算公式14
+			M-step:
+				计算公式9
+				计算公式17
+			A=_A
+			B=_B
+		return A,B
+	下面解决连续观测向量的计算问题：
+	4.4 Vector Quantization
+		（to be continued）
+	4.5 Gaussian
+		（to be continued）
+	4.6 Gaussian Mixture Model(GMM)
+		（to be continued）
 5）例子
 	（to be continued）
 	
