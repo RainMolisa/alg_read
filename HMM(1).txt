@@ -76,8 +76,8 @@
 			公式13：P(q[t]=j,O|lamda)=alpha[t](j)*beta[t](j)
 		然后把公式13带入到公式12
 			公式14：gamma[t](j)=alpha[t](j)*beta[t](j)/P(O|lamda)
-		于是状态j的次数就可以表示成：
-			公式15：状态j的次数=sum(gamma[1](j),...,gamma[t](j),...,gamma[T](j))
+		于是状态j的次数SumGamma就可以表示成：
+			公式15：SumGamma=sum(gamma[1](j),...,gamma[t](j),...,gamma[T](j))
 		观测值是vk并且状态是j的次数就是把观测值是vk的gamma[t](j)全加，下面写成：
 			公式16：观测值是vk并且状态是j的次数=sum[o[t]=vk](gamma[1](j),...,gamma[t](j),...,gamma[T](j))
 		然后把公式16和15带入公式10：
@@ -97,12 +97,29 @@
 			B=_B
 		return A,B
 	下面解决连续观测向量的计算问题：
-	4.4 Vector Quantization
-		（to be continued）
+	4.4 Vector Quantization（VQ）
+		对于实值向量来说（例如MFCC），公式16的计算中o[t]是否等于vk的操作并不可行。所以需要在实值向量和单词表之间做一个映射表，这个过程就是VQ，这个映射表就叫码本。
+		VQ的方法用kmeans（这里不再介绍kmeans）
+		然后把公式16里的o[t]=vk解释成vk是码本中最接近o[t]的单词。
 	4.5 Gaussian
-		（to be continued）
+		用VQ损失太大了，无法适应高级任务。
+		在VQ法中我们做一个码本从实值向量转到单词表然后执行4.2的内容，直接面对实值向量训练b[i](o[t])的话，那么4.2的方法中“观测值是vk并且状态是j的次数”是无法统计的。
+		于是我们重新考察b[i](o[t])的意义，于是我们有：
+			公式18：b[i](o[t])=P(o[t]|q[i])
+		其中P(o[t]|q[i])代表状态q[i]发生观测o[t]的概率，现在我们假设o[t]服从正太分布：
+			o[t]~N(mu,var)
+		实际上就是：
+			公式19：b[i](o[t])=N(mu,var)
+		其中mu就是所有q[t]=i时，o的均值
+		其中var就是所有q[t]=i时，o的方差（多维时就是方差矩阵）
+		但是实际上HMM并不确定t时刻到底是什么状态，只有一个t时刻是某状态的概率也就是公式14。
+		所以直接用o[t]和gamma[t](j)相乘来解决这个问题，然后就有：
+			公式20：mu[i]=sum(gamma[1](i)*o[1],...,gamma[t](i)*o[t],...,gamma[T](i)*o[T])/SumGamma
+			公式21：var[i]=sum(gamma[1](i)*(o[1]-mu[i])^2,...,gamma[t](i)*(o[t]-mu[i])^2,...,gamma[T](i)*(o[T]-mu[i])^2)/SumGamma
+		多元高斯不再赘述。
+		上面4.3中公式17替换成公式20和公式21，然后B不再是一个矩阵而是N个高斯函数。
 	4.6 Gaussian Mixture Model(GMM)
-		（to be continued）
+		
 5）例子
 	（to be continued）
 	
