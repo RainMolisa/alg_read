@@ -123,7 +123,29 @@
 		设混合高斯分布有M项高斯,c[k]表示第k个高斯的权重。B表示成：
 			公式22：b[j](o[t])=sum(c[j][1]*b[j][1](o[t]),...,c[j][m]*b[j][m](o[t]),...c[j][M]*b[j][M](o[t]))
 		现在的困难是假设已知o[t]属于状态i，但是未知o[t]属于GMM中的第几个高斯。
-		
+		假设t时刻序列O在lamda上o[t]是状态j的第m个高斯的概率是seata[t][m](j)
+			公式23：seata[t][m](i,j)=alpha[t-1](i)*a[i][j]*c[j][m]*b[j][m](o[t])*beta[t](j)
+			公式24：seata[t][m](j)=sum(seata[t][m](1,j),...,seata[t][m](i,j),..,seata[t][m](N,j))/P(O|lamda)
+		然后就可以借助seata计算混合高斯：
+			公式25：S(i)=sum[t=1..T](sum[m=1..M](seata[t][m](i)))
+			公式26：mu[i][m]=sum(seata[1][m](i)*o[1],...,seata[t][m](i)*o[t],...,seata[T][m](i)*o[T])/S(i)
+			公式27：c[i][m]=sum(seata[1][m](i),...,seata[t][m](i),...,seata[T][m](i))/S(i)
+			公式28：var[i][m]=sum(seata[1][m](i)*(o[1]-mu[i][m])^2,...,seata[t][m](i)*(o[t]-mu[i][m])^2,...,seata[T][m](i)*(o[T]-mu[i][m])^2)/S(i)
+		下面重写4.3的算法流程：
+			前向后向算法流程：
+			输入：观测序列O 状态集合Q
+			输出：lamda=(A,GMM) GMM=(mu,c,var)
+			初始化A和GMM
+			迭代直到收敛
+				E-step：
+					计算公式6
+					计算公式24
+				M-step:
+					计算公式9
+					计算公式26
+					计算公式27
+					计算公式28
+			return A,GMM
 5）例子
 	（to be continued）
 	
