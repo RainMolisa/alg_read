@@ -1,0 +1,20 @@
+模板匹配算法研究
+模板匹配就是在目标图像上寻找到模板的位置。
+1）暴力搜素
+	参考资料：
+		https://www.opencv.org.cn/opencvdoc/2.3.2/html/doc/tutorials/imgproc/histograms/template_matching/template_matching.html
+	1、平方差匹配(CV_TM_SQDIFF)
+		R(x,y)=sum[a,b]{(T(a,b)-I(x+a,y+b))^2}
+			R(x,y) 表示x,y处的匹配度
+			T(a,b) 表示模板T在(a,b)处的值
+			I(x+a,y+b) 表示图像I在(x+a,y+b)处的值
+			sum[a,b]{} 表示迭代(a,b)时大括号内表达式里的全加和
+	2、标准平方差匹配 (CV_TM_SQDIFF_NORMED)
+		R(x,y)=sum[a,b]{(T(a,b)-I(x+a,y+b))^2}/sqrt(sum[a,b]{T(a,b)^2}*sum[a,b]{I(x+a,y+b)^2})
+	3、相关匹配(CV_TM_CCOEFF)
+	4、标准相关匹配(CV_TM_CCOEFF_NORMED)
+	5、NCC和ZNCC
+2）广义霍夫变换（Generalized Hough Transform, GHT）
+	https://www.cs.utexas.edu/~dana/HoughT.pdf
+3）linemod？
+4）基于关键点的方法
